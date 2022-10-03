@@ -19,8 +19,11 @@ let
   ];
   expectedCredentialsSbt = pkgs.writeText "credentials.sbt" ''
     import scala.sys.process._
-    credentials += Credentials("Sonatype Nexus Repository Manager", "example.com", "user", "echo password".!!.trim)
-    credentials += Credentials("Sonatype Nexus Repository Manager X", "v2.example.com", "user1", "echo password1".!!.trim)
+    import com.github.benmanes.caffeine.cache.{ Cache, Caffeine }
+    val credentialsCache: Cache[String, String] = Caffeine.newBuilder().build()
+    def cachedCredentials(realm: String, cmd: String): String = credentialsCache.get(realm, _ => cmd.!!.trim)
+    credentials += Credentials("Sonatype Nexus Repository Manager", "example.com", "user", cachedCredentials("Sonatype Nexus Repository Manager", "echo password"))
+    credentials += Credentials("Sonatype Nexus Repository Manager X", "v2.example.com", "user1", cachedCredentials("Sonatype Nexus Repository Manager X", "echo password1"))
   '';
   credentialsSbtPath = ".sbt/1.0/credentials.sbt";
 in {

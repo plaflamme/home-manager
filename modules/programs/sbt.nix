@@ -9,11 +9,14 @@ let
   '';
 
   renderCredential = cred: ''
-    credentials += Credentials("${cred.realm}", "${cred.host}", "${cred.user}", "${cred.passwordCommand}".!!.trim)
+    credentials += Credentials("${cred.realm}", "${cred.host}", "${cred.user}", cachedCredentials("${cred.realm}", "${cred.passwordCommand}"))
   '';
 
   renderCredentials = creds: ''
     import scala.sys.process._
+    import com.github.benmanes.caffeine.cache.{ Cache, Caffeine }
+    val credentialsCache: Cache[String, String] = Caffeine.newBuilder().build()
+    def cachedCredentials(realm: String, cmd: String): String = credentialsCache.get(realm, _ => cmd.!!.trim)
     ${concatStrings (map renderCredential creds)}'';
 
   sbtTypes = {
