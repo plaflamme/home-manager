@@ -79,6 +79,11 @@ let
   cfg = config.programs.sbt;
 
 in {
+  imports = [
+    (mkRemovedOptionModule [ "programs" "sbt" "baseConfigPath" ]
+      "Use programs.sbt.baseUserConfigPath instead, but note that the semantics are slightly different.")
+  ];
+
   meta.maintainers = [ maintainers.kubukoz ];
 
   options.programs.sbt = {
@@ -91,10 +96,11 @@ in {
       description = "The package with sbt to be installed.";
     };
 
-    baseConfigPath = mkOption {
+    baseUserConfigPath = mkOption {
       type = types.str;
-      default = ".sbt/1.0";
-      description = "Where the plugins and credentials should be located.";
+      default = ".sbt";
+      description =
+        "Where the sbt configuration files should be located. Defaults to ~/.sbt";
     };
 
     plugins = mkOption {
@@ -164,17 +170,17 @@ in {
     { home.packages = [ cfg.package ]; }
 
     (mkIf (cfg.plugins != [ ]) {
-      home.file."${cfg.baseConfigPath}/plugins/plugins.sbt".text =
+      home.file."${cfg.baseUserConfigPath}/1.0/plugins/plugins.sbt".text =
         concatStrings (map renderPlugin cfg.plugins);
     })
 
     (mkIf (cfg.credentials != [ ]) {
-      home.file."${cfg.baseConfigPath}/credentials.sbt".text =
+      home.file."${cfg.baseUserConfigPath}/1.0/credentials.sbt".text =
         renderCredentials cfg.credentials;
     })
 
     (mkIf (cfg.repositories != [ ]) {
-      home.file."${cfg.baseConfigPath}/../repositories".text =
+      home.file."${cfg.baseUserConfigPath}/repositories".text =
         renderRepositories cfg.repositories;
     })
   ]);
