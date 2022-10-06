@@ -8,8 +8,8 @@ let
     addSbtPlugin("${plugin.org}" % "${plugin.artifact}" % "${plugin.version}")
   '';
 
-  renderCredential = cred:
-    let symbol = "credential_${builtins.hashString "sha256" cred.realm}";
+  renderCredential = idx: cred:
+    let symbol = "credential_${toString idx}";
     in ''
       lazy val ${symbol} = "${cred.passwordCommand}".!!.trim
       credentials += Credentials("${cred.realm}", "${cred.host}", "${cred.user}", ${symbol})
@@ -17,7 +17,7 @@ let
 
   renderCredentials = creds: ''
     import scala.sys.process._
-    ${concatStrings (map renderCredential creds)}'';
+    ${concatStrings (imap0 renderCredential creds)}'';
 
   sbtTypes = {
     plugin = types.submodule {
