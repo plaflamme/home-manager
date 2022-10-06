@@ -8,15 +8,15 @@ let
     addSbtPlugin("${plugin.org}" % "${plugin.artifact}" % "${plugin.version}")
   '';
 
-  renderCredential = cred: ''
-    credentials += Credentials("${cred.realm}", "${cred.host}", "${cred.user}", cachedCredentials("${cred.realm}", "${cred.passwordCommand}"))
-  '';
+  renderCredential = cred:
+    let symbol = "credential_${builtins.hashString "sha256" cred.realm}";
+    in ''
+      lazy val ${symbol} = "${cred.passwordCommand}".!!.trim
+      credentials += Credentials("${cred.realm}", "${cred.host}", "${cred.user}", ${symbol})
+    '';
 
   renderCredentials = creds: ''
     import scala.sys.process._
-    import com.github.benmanes.caffeine.cache.{ Cache, Caffeine }
-    val credentialsCache: Cache[String, String] = Caffeine.newBuilder().build()
-    def cachedCredentials(realm: String, cmd: String): String = credentialsCache.get(realm, _ => cmd.!!.trim)
     ${concatStrings (map renderCredential creds)}'';
 
   sbtTypes = {
